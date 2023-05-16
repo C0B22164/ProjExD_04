@@ -334,6 +334,8 @@ def main():
             time.sleep(2)
             return
 
+        grv.update()
+        grv.draw(screen)
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
@@ -343,8 +345,6 @@ def main():
         bombs.draw(screen)
         exps.update()
         exps.draw(screen)
-        grv.update()
-        grv.draw(screen)
         score.update(screen)
         pg.display.update()
         tmr += 1
