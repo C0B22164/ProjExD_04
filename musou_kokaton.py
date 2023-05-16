@@ -158,6 +158,28 @@ class Bomb(pg.sprite.Sprite):
             self.kill()
 
 
+class Shield(pg.sprite.Sprite):
+    """
+    防御壁に関するクラス
+    """
+    def __init__(self, bird: Bird, life: int):
+        super().__init__()
+        self.image = pg.Surface((20, bird.rect.height*2))
+        pg.draw.rect(self.image, (0, 0, 0), pg.Rect(0, 0, 20, bird.rect.height*2))
+        self.rect = self.image.get_rect()
+        self.rect.centery = bird.rect.centery
+        self.rect.centerx = bird.rect.centerx+40
+        self.life = life
+
+    def update(self):
+        """
+        発動時間を1減算し0未満になったらグループから
+        削除する
+        """
+        self.life -= 1
+        if self.life < 0:
+            self.kill()
+
 class Beam(pg.sprite.Sprite):
     """
     ビームに関するクラス
@@ -273,10 +295,11 @@ def main():
     score = Score()
 
     bird = Bird(3, (900, 400))
-    bombs = pg.sprite.Group()
-    beams = pg.sprite.Group()
-    exps = pg.sprite.Group()
-    emys = pg.sprite.Group()
+    bombs = pg.sprite.Group() #爆弾のグループ
+    beams = pg.sprite.Group() #ビームのグループ
+    exps = pg.sprite.Group()  #爆発のグループ
+    emys = pg.sprite.Group()  #敵機のグループ
+    shields = pg.sprite.Group() #防御壁のグループ
 
     tmr = 0
     clock = pg.time.Clock()
@@ -291,7 +314,15 @@ def main():
                 if score.score > 100: #scoreが100よりも大きいとき
                     bird.change_state("hyper",500) #hyperモードに切り替える
                     score.score -= 100 #scoreを-100
-
+            if event.type == pg.KEYDOWN and event.key == pg.K_CAPSLOCK:
+                if score.score >= 50 and len(shields) == 0: 
+                    shields.add(Shield(bird, 400))
+                    score.score -= 50
+            if event.type == pg.KEYDOWN and event.key == pg.K_LSHIFT:
+                bird.speed = 20
+            else:
+                bird.speed = 10
+               
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
@@ -323,6 +354,17 @@ def main():
                 time.sleep(2)
                 return
 
+        if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
+            bird.change_img(8, screen) # こうかとん悲しみエフェクト
+            score.update(screen)
+            pg.display.update()
+            time.sleep(2)
+            return
+        
+        for bomb in pg.sprite.groupcollide(bombs, shields, True, False).keys():
+            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+            score.score_up(1)
+
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
@@ -332,6 +374,8 @@ def main():
         bombs.draw(screen)
         exps.update()
         exps.draw(screen)
+        shields.update()
+        shields.draw(screen)
         score.update(screen)
         pg.display.update()
         tmr += 1
