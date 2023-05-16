@@ -268,7 +268,7 @@ class Enemy(pg.sprite.Sprite):
 
 class NeoGravity(pg.sprite.Sprite):
     """
-    超協力重力場に関するクラス
+    超強力重力場に関するクラス
     """
     def __init__(self, life):
         super().__init__()
@@ -279,6 +279,9 @@ class NeoGravity(pg.sprite.Sprite):
         self.life = life
     
     def update(self):
+        self.life -= 1
+        if self.life < 0:
+            self.kill()
 
 
 class Gravity(pg.sprite.Sprite):
@@ -319,7 +322,7 @@ class Score:
     def __init__(self):
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
-        self.score = 0
+        self.score = 9999
         self.image = self.font.render(f"Score: {self.score}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 100, HEIGHT-50
@@ -370,7 +373,7 @@ def main():
                     score.score -= 50  # 得点を50点分消費
                 if event.key == pg.K_SPACE:
                     beams.add(Beam(bird))
-                if pg.K_RSHIFT: #右shiftを押したとき
+                if event.key == pg.K_RSHIFT: #右shiftを押したとき
                     if score.score > 100: #scoreが100よりも大きいとき
                         bird.change_state("hyper",500) #hyperモードに切り替える
                         score.score -= 100 #scoreを-100
