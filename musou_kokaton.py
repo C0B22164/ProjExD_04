@@ -266,6 +266,21 @@ class Enemy(pg.sprite.Sprite):
         self.rect.centery += self.vy
 
 
+class NeoGravity(pg.sprite.Sprite):
+    """
+    超協力重力場に関するクラス
+    """
+    def __init__(self, life):
+        super().__init__()
+        self.image = pg.Surface((WIDTH, HEIGHT), flags=pg.SRCALPHA)
+        self.image.set_colorkey((0, 0, 0))
+        pg.draw.rect(self.image, (1, 0, 0, 130), (0, 0, WIDTH, HEIGHT))
+        self.rect = self.image.get_rect()
+        self.life = life
+    
+    def update(self):
+
+
 class Gravity(pg.sprite.Sprite):
     """
     重力球に関するクラス
@@ -328,13 +343,14 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    neo_grv = pg.sprite.Group()
     grv = pg.sprite.Group()  # Gravityのグループを作成
     bombs = pg.sprite.Group() #爆弾のグループ
     beams = pg.sprite.Group() #ビームのグループ
     exps = pg.sprite.Group()  #爆発のグループ
     emys = pg.sprite.Group()  #敵機のグループ
     shields = pg.sprite.Group() #防御壁のグループ
-
+    
 
     tmr = 0
     clock = pg.time.Clock()
@@ -346,6 +362,9 @@ def main():
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_SPACE:
                     beams.add(Beam(bird))
+                if event.key == pg.K_RETURN and score.score >= 200:
+                    neo_grv.add(NeoGravity(400))
+                    score.score -= 200
                 if event.key == pg.K_TAB and score.score >= 50:  # 押されたキーがTABキー，かつ，得点が50点以上の時
                     grv.add(Gravity(bird, 200, 500))  # Gravityのグループに追加
                     score.score -= 50  # 得点を50点分消費
@@ -383,6 +402,14 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.score_up(1)  # 1点アップ
         
+        for bomb in pg.sprite.groupcollide(bombs, neo_grv, True, False).keys():
+            exps.add(Explosion(bomb, 50))
+            score.score_up(1)
+        
+        for emy in pg.sprite.groupcollide(emys, neo_grv, True, False).keys():
+            exps.add(Explosion(emy, 50))
+            score.score_up(10)
+
         for bomb in pg.sprite.groupcollide(bombs, grv, True, False).keys():
             exps.add(Explosion(bomb, 50))
             score.score_up(1)
@@ -399,6 +426,7 @@ def main():
                 time.sleep(2)
                 return
 
+
         if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
             bird.change_img(8, screen) # こうかとん悲しみエフェクト
             score.update(screen)
@@ -410,6 +438,9 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.score_up(1)
 
+
+        neo_grv.update()
+        neo_grv.draw(screen)
         grv.update()
         grv.draw(screen)
         bird.update(key_lst, screen)
