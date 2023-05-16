@@ -232,6 +232,12 @@ class Gravity(pg.sprite.Sprite):
     重力球に関するクラス
     """
     def __init__(self, bird: Bird, size: int, life: int):
+        """
+        重力球Surfaceを生成する
+        引数1 bird：重力球を発生させるこうかとん
+        引数2 size：重力球の半径
+        引数3 life：重力球の発動時間
+        """
         super().__init__()
         self.image = pg.Surface((2*size, 2*size), flags=pg.SRCALPHA)
         pg.draw.circle(self.image, (1, 0, 0, 100), (size, size), size)
@@ -241,6 +247,10 @@ class Gravity(pg.sprite.Sprite):
         self.rect.center = bird.rect.center
     
     def update(self):
+        """
+        重力球の発動時間を減少させる
+        発動時間が0未満になったとき，重力球をGroupから削除する
+        """
         self.life -= 1
         if self.life < 0:
             self.kill()
@@ -279,7 +289,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
-    grv = pg.sprite.Group()
+    grv = pg.sprite.Group()  # Gravityのグループを作成
 
     tmr = 0
     clock = pg.time.Clock()
@@ -291,9 +301,9 @@ def main():
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_SPACE:
                     beams.add(Beam(bird))
-                if event.key == pg.K_TAB and score.score >= 50:
-                    grv.add(Gravity(bird, 200, 500))
-                    score.score -= 50
+                if event.key == pg.K_TAB and score.score >= 50:  # 押されたキーがTABキー，かつ，得点が50点以上の時
+                    grv.add(Gravity(bird, 200, 500))  # Gravityのグループに追加
+                    score.score -= 50  # 得点を50点分消費
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
