@@ -227,6 +227,25 @@ class Enemy(pg.sprite.Sprite):
         self.rect.centery += self.vy
 
 
+class Gravity(pg.sprite.Sprite):
+    """
+    重力球に関するクラス
+    """
+    def __init__(self, bird: Bird, size: int, life: int):
+        super().__init__()
+        self.image = pg.Surface((2*size, 2*size), flags=pg.SRCALPHA)
+        pg.draw.circle(self.image, (1, 0, 0, 100), (size, size), size)
+        self.image.set_colorkey((0, 0, 0))
+        self.rect = self.image.get_rect()
+        self.life = life
+        self.rect.center = bird.rect.center
+    
+    def update(self):
+        self.life -= 1
+        if self.life < 0:
+            self.kill()
+
+
 class Score:
     """
     打ち落とした爆弾，敵機の数をスコアとして表示するクラス
@@ -260,6 +279,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    grv = pg.sprite.Group()
 
     tmr = 0
     clock = pg.time.Clock()
@@ -268,8 +288,12 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                beams.add(Beam(bird))
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
+                    beams.add(Beam(bird))
+                if event.key == pg.K_TAB and score.score >= 50:
+                    grv.add(Gravity(bird, 200, 500))
+                    score.score -= 50
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
@@ -288,6 +312,10 @@ def main():
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.score_up(1)  # 1点アップ
+        
+        for bomb in pg.sprite.groupcollide(bombs, grv, True, False).keys():
+            exps.add(Explosion(bomb, 50))
+            score.score_up(1)
 
         if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
             bird.change_img(8, screen) # こうかとん悲しみエフェクト
@@ -305,6 +333,8 @@ def main():
         bombs.draw(screen)
         exps.update()
         exps.draw(screen)
+        grv.update()
+        grv.draw(screen)
         score.update(screen)
         pg.display.update()
         tmr += 1
