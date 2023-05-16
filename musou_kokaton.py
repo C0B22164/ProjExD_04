@@ -227,6 +227,24 @@ class Enemy(pg.sprite.Sprite):
         self.rect.centery += self.vy
 
 
+class NeoGravity(pg.sprite.Sprite):
+    """
+    超協力重力場に関するクラス
+    """
+    def __init__(self, life):
+        super().__init__()
+        self.image = pg.Surface((WIDTH, HEIGHT), flags=pg.SRCALPHA)
+        self.image.set_colorkey((0, 0, 0))
+        pg.draw.rect(self.image, (1, 0, 0, 130), (0, 0, WIDTH, HEIGHT))
+        self.rect = self.image.get_rect()
+        self.life = life
+    
+    def update(self):
+        self.life -= 1
+        if self.life < 0:
+            self.kill()
+
+
 class Score:
     """
     打ち落とした爆弾，敵機の数をスコアとして表示するクラス
@@ -260,6 +278,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    neo_grv = pg.sprite.Group()
 
     tmr = 0
     clock = pg.time.Clock()
@@ -268,8 +287,12 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                beams.add(Beam(bird))
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
+                    beams.add(Beam(bird))
+                if event.key == pg.K_RETURN and score.score >= 200:
+                    neo_grv.add(NeoGravity(400))
+                    score.score -= 200
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
@@ -288,6 +311,14 @@ def main():
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.score_up(1)  # 1点アップ
+        
+        for bomb in pg.sprite.groupcollide(bombs, neo_grv, True, False).keys():
+            exps.add(Explosion(bomb, 50))
+            score.score_up(1)
+        
+        for emy in pg.sprite.groupcollide(emys, neo_grv, True, False).keys():
+            exps.add(Explosion(emy, 50))
+            score.score_up(10)
 
         if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
             bird.change_img(8, screen) # こうかとん悲しみエフェクト
@@ -296,6 +327,8 @@ def main():
             time.sleep(2)
             return
 
+        neo_grv.update()
+        neo_grv.draw(screen)
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
